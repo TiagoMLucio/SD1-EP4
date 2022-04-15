@@ -23,7 +23,7 @@ entity control_unit is
 end entity; 
 
 architecture arch of control_unit 
-    type estado_t is (fetch, decode, break, pushsp, poppc, add);
+    type estado_t is (fetch, decode, break, pushsp, poppc, operation, load);
     signal PE, EA : estado_t;
 
     procedure wait_mem(dowrite: boolean) is
@@ -92,23 +92,32 @@ begin
                             pc_src <= '1';  -- pc=mem[sp]
                             wait_mem(false);
 
+
+
                             PE <= poppc;
-                        when  "00000101" =>  -- ADD: Empilha a soma do topo com o segundo elemento da pilha.
+                        when  "00000101"|"00000110"|"00000111" =>  -- ADD, AND, OR: Empilha a soma/and/or do topo com o segundo elemento da pilha.
                             mem_a_addr_src <= '0';
                             alu_a_src <= "01";
                             alu_b_src <= "00";
                             alu_shfimm_src <= '1'; -- constante 4
-                            alu_op <= "001"; -- subtração
+                            with instruction select alu_op <=
+                                "001" when "00000101"; -- ADD
+                                "010" when "00000110"; -- AND
+                                "011" when "00000111"; -- OR
                             sp_en <= '1';  -- sp = sp + 4
                             mem_b_addr_src <= "01";
-                            
+
                             wait_men(false);
 
-                            PE <= add;
+                            PE <= operation;
 
-                        when  "00000110" => ;
-                        when  "00000111" => ;
-                        when  "00001000" => ;
+                        when  "00001000" => -- LOAD: Substitui o topo da pilha pelo conteúdo endereçado pelo topo.
+                            mem_a_addr_src <= '0';
+                
+                            wait_men(false);
+
+                            PE <= load;
+
                         when  "00001001" => ;
                         when  "00001010" => ;
                         when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
@@ -146,7 +155,7 @@ begin
 
                 PE <= fetch;
             
-            wait poppc =>
+            when poppc =>
                 pc_en <= '0';
                 alu_a_src <= "01";
                 alu_b_src <= "00";
@@ -156,7 +165,7 @@ begin
                 
                 PE <= fetch;
             
-            wait add =>
+            when operation =>
                 sp_en <= '0';
                 alu_a_src <= "10";
                 alu_b_src <= "01";
@@ -167,8 +176,16 @@ begin
                 wait_mem(true);
                 
                 PE <= fetch;
-                
-                        
+
+            when load =>
+                mem_b_addr_src <= "00";
+                mem_b_wrd_src <= "01";
+                mem_b_mem_src <= '0';
+
+                wait_mem(true);
+
+                PE <= fetch;
+            
         end case;
 
     end process combinatorio
