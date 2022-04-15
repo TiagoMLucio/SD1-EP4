@@ -23,7 +23,7 @@ entity control_unit is
 end entity; 
 
 architecture arch of control_unit 
-    type estado_t is (fetch, decode, break, pushsp, poppc);
+    type estado_t is (fetch, decode, break, pushsp, poppc, add);
     signal PE, EA : estado_t;
 
     procedure wait_mem(dowrite: boolean) is
@@ -94,7 +94,18 @@ begin
 
                             PE <= poppc;
                         when  "00000101" =>  -- ADD: Empilha a soma do topo com o segundo elemento da pilha.
-                            ;
+                            mem_a_addr_src <= '0';
+                            alu_a_src <= "01";
+                            alu_b_src <= "00";
+                            alu_shfimm_src <= '1'; -- constante 4
+                            alu_op <= "001"; -- subtração
+                            sp_en <= '1';  -- sp = sp + 4
+                            mem_b_addr_src <= "01";
+                            
+                            wait_men(false);
+
+                            PE <= add;
+
                         when  "00000110" => ;
                         when  "00000111" => ;
                         when  "00001000" => ;
@@ -144,7 +155,20 @@ begin
                 sp_en <= '1';  -- sp = sp + 4
                 
                 PE <= fetch;
+            
+            wait add =>
+                sp_en <= '0';
+                alu_a_src <= "10";
+                alu_b_src <= "01";
+                alu_mem <= '1';
+                mem_b_addr_src <= "00";
+                mem_b_wrd_src <= "00";
 
+                wait_mem(true);
+                
+                PE <= fetch;
+                
+                        
         end case;
 
     end process combinatorio
