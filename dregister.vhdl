@@ -26,8 +26,8 @@ architecture arch of d_register is
 begin
     procD: process(clock, reset, load)
     begin 
-        if (reset = '1') then q <= bit_vector(to_unsigned(reset_value, width));   -- assíncrono
-        elsif (load = '1' and rising_edge(clock)) then q <= d;                                  -- borda de subida do clock
+        if (reset = '1') then q <= bit_vector(to_unsigned(reset_value, width));     -- assíncrono
+        elsif (load = '1' and rising_edge(clock)) then q <= d;                      -- borda de subida do clock
         end if ;
     end process procD;    
 
