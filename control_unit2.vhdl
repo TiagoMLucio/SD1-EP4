@@ -151,7 +151,7 @@ begin
                                 when  "00001101" => -- POPSP: Desempilha para o SP
                                     mem_a_addr_src <= '0';
                                     alu_a_src <= "10";
-                                    alu_op <= "000";
+                                    alu_op <= "000"; -- copia A para a saída
                                     sp_en <= '1';
 
                                     wait_mem(false);
@@ -160,11 +160,23 @@ begin
 
                             end case;
                         else -- ADDSP: Soma o topo da pilha com o conteúdo no endereço calculado.
-                            ;
+                            mem_a_addr_src <= '0';
+                            mem_b_addr_src <= "10";
+                            -- ir[3:0] << 2 ???
                     else -- 0_nnnnnnn
                         case instruction(6 downto 5) is
                             when "01" => -- CALL: Empilha o PC e o sobrescreve com ir[4:0]«5n, causando um salto.
-                                ;
+                                alu_a_src <= "01";
+                                alu_b_src <= "00";
+                                alu_shfimm_src <= '1'; -- constante 4
+                                alu_op <= "100"; -- subtração
+                                sp_en <= '1';  -- sp = sp - 4
+
+                                mem_b_addr_src <= "00";
+                                mem_b_wrd_src <= "00";
+
+                                PE <= call;
+
                             when "10" => -- STORESP: Desempilha e guarda o valor desempilhado no endereço calculado.
                                 alu_a_src <= "01";
                                 alu_b_src <= "11"; --  (not(ir[4])&ir[3:0]«2)
@@ -253,6 +265,18 @@ begin
 
                 PE <= fetch;
 
+            when call <=
+                alu_a_src <= "00";
+                alu_op <= "000";
+                
+                wait_mem(true);
+
+                alu_b_src <= "10"; -- ir[4:0]«5
+                alu_op <= "111"; -- copia B para a saída
+                pc_src <= '0';
+                pc_en <= '1';
+
+                PE <= fetch;
 
         end case;
 
