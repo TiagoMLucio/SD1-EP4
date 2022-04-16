@@ -22,7 +22,7 @@ entity control_unit is
         );
 end entity; 
 
-architecture arch of control_unit 
+architecture arch of control_unit is
     type estado_t is (
                     fetch, 
                     decode, 
@@ -64,6 +64,7 @@ begin
             EA <= fetch;
         elsif  (rising_edge(clock)) then
             EA <= PE;
+        end if;
     end process sincrono;
 
     combinatorio: process(EA)
@@ -183,6 +184,7 @@ begin
                             mem_a_addr_src <= '0';
                             mem_b_addr_src <= "10";
                             -- ir[3:0] << 2 ???
+                        end if;
                     else -- 0_nnnnnnn
                         case instruction(6 downto 5) is
                             when "01" => -- CALL: Empilha o PC e o sobrescreve com ir[4:0]«5n, causando um salto.
@@ -224,6 +226,8 @@ begin
                                 wait_mem(false);
 
                                 PE <= storesp;
+                        end case;
+                    end if;
                 else -- 1_nnnnnnn
                     if im_count = '0' -- IM*
                         im_count <= '1';
@@ -309,7 +313,7 @@ begin
 
                 PE <= fetch;
             
-            when store_1 <=
+            when store_1 =>
                 mem_b_addr_src <= "01";
 
                 alu_a_src <= "01";
@@ -322,7 +326,7 @@ begin
                 
                 PE <= store_2;
             
-            when store_2 <=
+            when store_2 =>
                 alu_a_src <= "01";
                 alu_b_src <= "00";
                 alu_shfimm_src <= '1'; -- constante 4
@@ -331,7 +335,7 @@ begin
 
                 PE <= fetch;
 
-            when call <=
+            when call =>
                 alu_a_src <= "00";
                 alu_op <= "000";
                 
@@ -344,7 +348,7 @@ begin
 
                 PE <= fetch;
 
-            when storesp <=
+            when storesp =>
                 wait_mem(true);
 
                 alu_a_src <= "01";
@@ -355,7 +359,7 @@ begin
 
                 PE <= fetch;
 
-            when loadsp <=
+            when loadsp =>
                 alu_a_src <= "01";
                 alu_b_src <= "00";
                 alu_shfimm_src <= '1'; -- constante 4
@@ -370,6 +374,6 @@ begin
 
         end case;
 
-    end process combinatorio
+    end process combinatorio;
 
 end architecture arch;
