@@ -94,8 +94,6 @@ begin
                                     pc_src <= '1';  -- pc=mem[sp]
                                     wait_mem(false);
 
-
-
                                     PE <= poppc;
                                 when  "00000101"|"00000110"|"00000111" =>  -- ADD, AND, OR: Empilha a soma/and/or do topo com o segundo elemento da pilha.
                                     mem_a_addr_src <= '0';
@@ -120,9 +118,17 @@ begin
 
                                     PE <= load;
 
-                                when  "00001001"|"0000_1010" => -- NOT/FLIP: Empilha o NOT/reverso do topo da pilha.
-                                    ;
-                                when  "00001010" => ;
+                                when  "00001001"|"00001010" => -- NOT/FLIP: Empilha o NOT/reverso do topo da pilha.
+                                    mem_a_addr_src <= '0';
+                                    alu_a_src <= "10";
+                                    with instruction select alu_op <=
+                                        "101" when "00001001"; -- NOT
+                                        "110" when "00001010"; -- FLIP
+                                    
+                                    wait_mem(false);
+
+                                    PE <= operation_1
+
                                 when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
                                     PE <= fetch;
                                 when  "00001100" => ;
@@ -190,7 +196,12 @@ begin
                 PE <= fetch;
 
             when operation_1 =>
-                ;
+                mem_b_addr_src <= "00";
+                mem_b_wrd_src <= "00";
+
+                wait_mem(true);
+
+                PE <= fetch;
             
         end case;
 
