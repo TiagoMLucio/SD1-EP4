@@ -55,7 +55,7 @@ begin
         end if;
     end process sincrono;
 
-    combinatorio: process(EA)
+    combinatorio: process
 
     procedure wait_mem(dowrite: boolean) is
         begin
@@ -131,6 +131,7 @@ begin
                                             alu_op <= "010";
                                         when "111" => -- OR
                                             alu_op <= "011";
+                                        when others => 
                                     end case;
 
                                     sp_en <= '1';  -- sp = sp + 4
@@ -156,6 +157,7 @@ begin
                                             alu_op <= "101";
                                         when "10" => -- FLIP
                                             alu_op <= "110";
+                                        when others => 
                                     end case;
                                     
                                     wait_mem(false);
@@ -190,6 +192,8 @@ begin
                                     wait_mem(false);
 
                                     PE <= fetch;
+
+                                when others => 
 
                             end case;
                         else -- ADDSP: Soma o topo da pilha com o conteúdo no endereço calculado.
@@ -238,6 +242,8 @@ begin
                                 wait_mem(false);
 
                                 PE <= storesp;
+                            
+                                when others =>
                         end case;
                     end if;
                 else -- 1_nnnnnnn
@@ -383,6 +389,8 @@ begin
                 wait_mem(true);
 
                 PE <= fetch;
+            
+            when others =>
 
         end case;
 
