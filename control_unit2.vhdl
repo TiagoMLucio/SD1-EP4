@@ -301,8 +301,26 @@ begin
             when storesp <=
                 wait_mem(true);
 
+                alu_a_src <= "01";
+                alu_b_src <= "00";
+                alu_shfimm_src <= '1'; -- constante 4
+                alu_op <= "100"; -- subtração
+                sp_en <= '1';  -- sp = sp - 4
+
+                PE <= fetch;
+
             when loadsp <=
-                ;
+                alu_a_src <= "01";
+                alu_b_src <= "00";
+                alu_shfimm_src <= '1'; -- constante 4
+                alu_op <= "100"; -- subtração
+                sp_en <= '1';  -- sp = sp - 4
+                
+                mem_b_addr_src <= "10";
+
+                wait_mem(true);
+
+                PE <= fetch;
 
         end case;
 
