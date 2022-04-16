@@ -118,7 +118,8 @@ begin
 
                             PE <= load;
 
-                        when  "00001001" => ;
+                        when  "00001001" => -- NOT: Empilha o NOT do topo da pilha.
+                            ;
                         when  "00001010" => ;
                         when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
                             PE <= fetch;
@@ -171,7 +172,7 @@ begin
                 alu_b_src <= "01";
                 alu_mem <= '1';
                 mem_b_addr_src <= "00";
-                mem_b_wrd_src <= "00";
+                mem_b_wrd_src <= "00
 
                 wait_mem(true);
                 
