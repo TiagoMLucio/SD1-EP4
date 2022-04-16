@@ -23,8 +23,27 @@ entity control_unit is
 end entity; 
 
 architecture arch of control_unit 
-    type estado_t is (fetch, decode, break, pushsp, poppc, operation_2, load, operation_1, store_1, store_2);
+    type estado_t is (
+                    fetch, 
+                    decode, 
+                    -- Execute (
+                    break, 
+                    pushsp, 
+                    poppc, 
+                    operation_2, -- ADD, AND, OR
+                    load, 
+                    operation_1, -- NOT, FLIP
+                    store_1, 
+                    store_2, 
+                    call, 
+                    storesp, 
+                    loadsp
+                    -- )
+    );
+
     signal PE, EA : estado_t;
+
+    signal im_count : bit;
 
     procedure wait_mem(dowrite: boolean) is
         begin
@@ -75,6 +94,7 @@ begin
                 sp_en <= '0';
                 ir_en <= '0';
                 if (instruction(7) = '0')
+                    im_count <= '0';
                     if (instruction(6 downto 5) = "00")
                         if (instruction(4) = '0)
                             case (instruction) is
@@ -205,7 +225,33 @@ begin
 
                                 PE <= storesp;
                 else -- 1_nnnnnnn
-                    ;
+                    if im_count = '0' -- IM*
+                        im_count <= '1';
+
+                        alu_a_src <= "01";
+                        alu_b_src <= "00";
+                        alu_shfimm_src <= '1'; -- constante 4
+                        alu_op <= "100"; -- subtração
+                        sp_en <= '1';  -- sp = sp - 4
+
+                        mem_b_addr_src <= "10";
+                        mem_b_wrd_src <= "11"; -- signExt(ir[6:0])
+
+                        wait_mem(true);
+
+                    else -- IM*
+                        mem_a_addr_src <= '0';
+                        alu_mem_src <= '0'; -- memA_rdd«7 | IR[6:0]
+                        alu_b_src <= "01";
+                        alu_op <= "111"; -- copia B para a saída
+                        mem_b_wrd_src <= "00";
+                        mem_b_addr_src <= "00";
+                        
+                        wait_mem(true);
+                    end if;
+                end if;
+
+
 
             when break =>
                 halted <= 1;
