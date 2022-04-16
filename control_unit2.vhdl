@@ -131,18 +131,28 @@ begin
 
                                 when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
                                     PE <= fetch;
-                                when  "00001100" => ;
-                                when  "00001101" => ;
+                                when  "00001100" => -- STORE: Guarda o segundo elemento da pilha no endereço apontado pelo topo. Desempilha ambos.
+                                    ;
+                                when  "00001101" => -- POPSP: Desempilha para o SP
+                                    mem_a_addr_src <= '0';
+                                    alu_a_src <= "10";
+                                    alu_op <= "000";
+                                    sp_en <= '1';
+
+                                    wait_mem(false);
+
+                                    PE <= fetch;
+
                             end case;
-                        else -- 0001_nnnn
-                                ;
+                        else -- ADDSP: Soma o topo da pilha com o conteúdo no endereço calculado.
+                            ;
                     else -- 0_nnnnnnn
                         case instruction(6 downto 5) is
-                            when "01" =>
+                            when "01" => -- CALL: Empilha o PC e o sobrescreve com ir[4:0]«5n, causando um salto.
                                 ;
-                            when "10" =>
+                            when "10" => -- STORESP: Desempilha e guarda o valor desempilhado no endereço calculado.
                                 ;
-                            when "11" =>
+                            when "11" => -- LOADSP: Busca o valor no endereço calculado e empilha.
                                 ;
                 else -- 1_nnnnnnn
                     ;
