@@ -23,7 +23,7 @@ entity control_unit is
 end entity; 
 
 architecture arch of control_unit 
-    type estado_t is (fetch, decode, break, pushsp, poppc, operation_2, load, operation_1);
+    type estado_t is (fetch, decode, break, pushsp, poppc, operation_2, load, operation_1, store_1, store_2);
     signal PE, EA : estado_t;
 
     procedure wait_mem(dowrite: boolean) is
@@ -131,8 +131,23 @@ begin
 
                                 when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
                                     PE <= fetch;
+
                                 when  "00001100" => -- STORE: Guarda o segundo elemento da pilha no endereço apontado pelo topo. Desempilha ambos.
-                                    ;
+                                    alu_a_src <= "01";
+                                    alu_b_src <= "00";
+                                    alu_shfimm_src <= '1'; -- constante 4
+                                    alu_op <= "001"; -- adição
+                                    mem_b_addr_src <= "10";
+
+                                    mem_b_wrd_src <= "01";
+                                    mem_b_mem_src <= '1';
+
+                                    mem_a_addr_src <= '0';
+
+                                    wait_mem(false);
+
+                                    PE <= store_1;
+
                                 when  "00001101" => -- POPSP: Desempilha para o SP
                                     mem_a_addr_src <= '0';
                                     alu_a_src <= "10";
@@ -151,7 +166,10 @@ begin
                             when "01" => -- CALL: Empilha o PC e o sobrescreve com ir[4:0]«5n, causando um salto.
                                 ;
                             when "10" => -- STORESP: Desempilha e guarda o valor desempilhado no endereço calculado.
-                                ;
+                                alu_a_src <= "01";
+                                alu_b_src <= "11"; --  (not(ir[4])&ir[3:0]«2)
+                                alu_op <= "001"; -- adição
+
                             when "11" => -- LOADSP: Busca o valor no endereço calculado e empilha.
                                 ;
                 else -- 1_nnnnnnn
@@ -213,6 +231,29 @@ begin
 
                 PE <= fetch;
             
+            when store_1 <=
+                mem_b_addr_src <= "01";
+
+                alu_a_src <= "01";
+                alu_b_src <= "00";
+                alu_shfimm_src <= '1'; -- constante 4
+                alu_op <= "001"; -- adição
+                sp_en <= '1';  -- sp = sp + 4
+
+                wait_mem(true);
+                
+                PE <= store_2;
+            
+            when store_2 <=
+                alu_a_src <= "01";
+                alu_b_src <= "00";
+                alu_shfimm_src <= '1'; -- constante 4
+                alu_op <= "001"; -- adição
+                sp_en <= '1';  -- sp = sp + 4
+
+                PE <= fetch;
+
+
         end case;
 
     end process combinatorio
