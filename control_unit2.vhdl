@@ -45,6 +45,18 @@ architecture arch of control_unit is
 
     signal im_count : bit;
 
+begin
+    sincrono: process(clock, reset, PE)
+    begin
+        if (reset = '1') then
+            EA <= fetch;
+        elsif  (rising_edge(clock)) then
+            EA <= PE;
+        end if;
+    end process sincrono;
+
+    combinatorio: process(EA)
+
     procedure wait_mem(dowrite: boolean) is
         begin
             if dowrite then
@@ -57,19 +69,9 @@ architecture arch of control_unit is
             mem_enable <= '0';
         end procedure wait_mem;
 
-begin
-    sincrono: process(clock, reset, PE)
+    
     begin
-        if (reset = '1')
-            EA <= fetch;
-        elsif  (rising_edge(clock)) then
-            EA <= PE;
-        end if;
-    end process sincrono;
-
-    combinatorio: process(EA)
-    begin
-        case (EA)
+        case (EA) is
             when fetch =>
                 pc_en <= '0';
                 sp_en <= '0';
@@ -94,10 +96,10 @@ begin
                 pc_en <= '0';
                 sp_en <= '0';
                 ir_en <= '0';
-                if (instruction(7) = '0')
+                if (instruction(7) = '0') then
                     im_count <= '0';
-                    if (instruction(6 downto 5) = "00")
-                        if (instruction(4) = '0)
+                    if (instruction(6 downto 5) = "00") then
+                        if (instruction(4) = '0') then
                             case (instruction) is
                                 when  "00000000" => -- BREAK: Levanta o halt e trava o processador.
                                     PE <= break;
@@ -121,34 +123,44 @@ begin
                                     alu_a_src <= "01";
                                     alu_b_src <= "00";
                                     alu_shfimm_src <= '1'; -- constante 4
-                                    with instruction select alu_op <=
-                                        "001" when "00000101"; -- ADD
-                                        "010" when "00000110"; -- AND
-                                        "011" when "00000111"; -- OR
+
+                                    case instruction(2 downto 0) is
+                                        when "101" => -- ADD
+                                            alu_op <= "001";
+                                        when "110" => -- AND
+                                            alu_op <= "010";
+                                        when "111" => -- OR
+                                            alu_op <= "011";
+                                    end case;
+
                                     sp_en <= '1';  -- sp = sp + 4
                                     mem_b_addr_src <= "01";
 
-                                    wait_men(false);
+                                    wait_mem(false);
 
                                     PE <= operation_2;
 
                                 when  "00001000" => -- LOAD: Substitui o topo da pilha pelo conteúdo endereçado pelo topo.
                                     mem_a_addr_src <= '0';
                         
-                                    wait_men(false);
+                                    wait_mem(false);
 
                                     PE <= load;
 
                                 when  "00001001"|"00001010" => -- NOT/FLIP: Empilha o NOT/reverso do topo da pilha.
                                     mem_a_addr_src <= '0';
                                     alu_a_src <= "10";
-                                    with instruction select alu_op <=
-                                        "101" when "00001001"; -- NOT
-                                        "110" when "00001010"; -- FLIP
+                                    
+                                    case instruction(1 downto 0) is
+                                        when "01" => -- NOT
+                                            alu_op <= "101";
+                                        when "10" => -- FLIP
+                                            alu_op <= "110";
+                                    end case;
                                     
                                     wait_mem(false);
 
-                                    PE <= operation_1
+                                    PE <= operation_1;
 
                                 when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
                                     PE <= fetch;
@@ -229,7 +241,7 @@ begin
                         end case;
                     end if;
                 else -- 1_nnnnnnn
-                    if im_count = '0' -- IM*
+                    if im_count = '0' then -- IM*
                         im_count <= '1';
 
                         alu_a_src <= "01";
@@ -258,7 +270,7 @@ begin
 
 
             when break =>
-                halted <= 1;
+                halted <= '1';
 
             when pushsp =>
                 sp_en <= '0';
@@ -269,7 +281,7 @@ begin
                 alu_op <= "001"; -- adição
     
                 mem_b_addr_src <= "00";
-                memB_wrd <= "00";-- mem[sp-4] =  sp
+                mem_b_wrd_src <= "00";-- mem[sp-4] =  sp
                 wait_mem(true);
 
                 PE <= fetch;
@@ -288,7 +300,7 @@ begin
                 sp_en <= '0';
                 alu_a_src <= "10";
                 alu_b_src <= "01";
-                alu_mem <= '1';
+                alu_mem_src <= '1';
                 mem_b_addr_src <= "00";
                 mem_b_wrd_src <= "00";
 
