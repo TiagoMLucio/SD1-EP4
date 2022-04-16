@@ -182,8 +182,28 @@ begin
                                 alu_b_src <= "11"; --  (not(ir[4])&ir[3:0]«2)
                                 alu_op <= "001"; -- adição
 
+                                mem_a_addr_src <= '0';
+                                mem_b_wrd_src <= "01";
+                                mem_b_mem_src <= '0';
+                                
+                                mem_b_addr_src <= "10";
+
+                                wait_mem(false);
+
+                                PE <= storesp;
+
                             when "11" => -- LOADSP: Busca o valor no endereço calculado e empilha.
-                                ;
+                                alu_a_src <= "01";
+                                alu_b_src <= "11"; --  (not(ir[4])&ir[3:0]«2)
+                                alu_op <= "001"; -- adição
+
+                                mem_b_addr_src <= "10";
+                                mem_b_mem_src <= '1';
+                                mem_b_wrd_src <= "01";
+
+                                wait_mem(false);
+
+                                PE <= storesp;
                 else -- 1_nnnnnnn
                     ;
 
@@ -277,6 +297,12 @@ begin
                 pc_en <= '1';
 
                 PE <= fetch;
+
+            when storesp <=
+                wait_mem(true);
+
+            when loadsp <=
+                ;
 
         end case;
 
