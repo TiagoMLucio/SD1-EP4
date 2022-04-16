@@ -100,10 +100,10 @@ begin
                     im_count <= '0';
                     if (instruction(6 downto 5) = "00") then
                         if (instruction(4) = '0') then
-                            case (instruction) is
-                                when  "00000000" => -- BREAK: Levanta o halt e trava o processador.
+                            case (instruction(3 downto 0)) is
+                                when  "0000" => -- BREAK: Levanta o halt e trava o processador.
                                     PE <= break;
-                                when  "00000010" => -- PUSHSP: Empilha o conteúdo de SP.
+                                when  "0010" => -- PUSHSP: Empilha o conteúdo de SP.
                                     alu_a_src <= "01";
                                     alu_b_src <= "00";
                                     alu_shfimm_src <= '1'; -- constante 4
@@ -111,14 +111,14 @@ begin
                                     sp_en <= '1';  -- sp = sp - 4
 
                                     PE <= pushsp;
-                                when  "00000100" => -- POPPC: Desempilha para o PC.
+                                when  "0100" => -- POPPC: Desempilha para o PC.
                                     mem_a_addr_src <= '0';
                                     pc_en <= '1';
                                     pc_src <= '1';  -- pc=mem[sp]
                                     wait_mem(false);
 
                                     PE <= poppc;
-                                when  "00000101"|"00000110"|"00000111" =>  -- ADD, AND, OR: Empilha a soma/and/or do topo com o segundo elemento da pilha.
+                                when  "0101"|"0110"|"0111" =>  -- ADD, AND, OR: Empilha a soma/and/or do topo com o segundo elemento da pilha.
                                     mem_a_addr_src <= '0';
                                     alu_a_src <= "01";
                                     alu_b_src <= "00";
@@ -140,14 +140,14 @@ begin
 
                                     PE <= operation_2;
 
-                                when  "00001000" => -- LOAD: Substitui o topo da pilha pelo conteúdo endereçado pelo topo.
+                                when  "1000" => -- LOAD: Substitui o topo da pilha pelo conteúdo endereçado pelo topo.
                                     mem_a_addr_src <= '0';
                         
                                     wait_mem(false);
 
                                     PE <= load;
 
-                                when  "00001001"|"00001010" => -- NOT/FLIP: Empilha o NOT/reverso do topo da pilha.
+                                when  "1001"|"1010" => -- NOT/FLIP: Empilha o NOT/reverso do topo da pilha.
                                     mem_a_addr_src <= '0';
                                     alu_a_src <= "10";
                                     
@@ -162,10 +162,10 @@ begin
 
                                     PE <= operation_1;
 
-                                when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
+                                when  "1011" => -- NOP: Não faz nada por um ciclo de clock
                                     PE <= fetch;
 
-                                when  "00001100" => -- STORE: Guarda o segundo elemento da pilha no endereço apontado pelo topo. Desempilha ambos.
+                                when  "1100" => -- STORE: Guarda o segundo elemento da pilha no endereço apontado pelo topo. Desempilha ambos.
                                     alu_a_src <= "01";
                                     alu_b_src <= "00";
                                     alu_shfimm_src <= '1'; -- constante 4
@@ -181,7 +181,7 @@ begin
 
                                     PE <= store_1;
 
-                                when  "00001101" => -- POPSP: Desempilha para o SP
+                                when  "1101" => -- POPSP: Desempilha para o SP
                                     mem_a_addr_src <= '0';
                                     alu_a_src <= "10";
                                     alu_op <= "000"; -- copia A para a saída
