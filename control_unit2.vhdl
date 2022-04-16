@@ -23,7 +23,7 @@ entity control_unit is
 end entity; 
 
 architecture arch of control_unit 
-    type estado_t is (fetch, decode, break, pushsp, poppc, operation, load);
+    type estado_t is (fetch, decode, break, pushsp, poppc, operation_2, load, operation_1);
     signal PE, EA : estado_t;
 
     procedure wait_mem(dowrite: boolean) is
@@ -75,68 +75,70 @@ begin
                 sp_en <= '0';
                 ir_en <= '0';
                 if (instruction(7) = '0')
-                    case (instruction) is
-                        when  "00000000" => -- BREAK: Levanta o halt e trava o processador.
-                            PE <= break;
-                        when  "00000010" => -- PUSHSP: Empilha o conteúdo de SP.
-                            alu_a_src <= "01";
-                            alu_b_src <= "00";
-                            alu_shfimm_src <= '1'; -- constante 4
-                            alu_op <= "100"; -- subtração
-                            sp_en <= '1';  -- sp = sp - 4
+                    if (instruction(6 downto 5) = "00")
+                        if (instruction(4) = '0)
+                            case (instruction) is
+                                when  "00000000" => -- BREAK: Levanta o halt e trava o processador.
+                                    PE <= break;
+                                when  "00000010" => -- PUSHSP: Empilha o conteúdo de SP.
+                                    alu_a_src <= "01";
+                                    alu_b_src <= "00";
+                                    alu_shfimm_src <= '1'; -- constante 4
+                                    alu_op <= "100"; -- subtração
+                                    sp_en <= '1';  -- sp = sp - 4
 
-                            PE <= pushsp;
-                        when  "00000100" => -- POPPC: Desempilha para o PC.
-                            mem_a_addr_src <= '0';
-                            pc_en <= '1';
-                            pc_src <= '1';  -- pc=mem[sp]
-                            wait_mem(false);
+                                    PE <= pushsp;
+                                when  "00000100" => -- POPPC: Desempilha para o PC.
+                                    mem_a_addr_src <= '0';
+                                    pc_en <= '1';
+                                    pc_src <= '1';  -- pc=mem[sp]
+                                    wait_mem(false);
 
 
 
-                            PE <= poppc;
-                        when  "00000101"|"00000110"|"00000111" =>  -- ADD, AND, OR: Empilha a soma/and/or do topo com o segundo elemento da pilha.
-                            mem_a_addr_src <= '0';
-                            alu_a_src <= "01";
-                            alu_b_src <= "00";
-                            alu_shfimm_src <= '1'; -- constante 4
-                            with instruction select alu_op <=
-                                "001" when "00000101"; -- ADD
-                                "010" when "00000110"; -- AND
-                                "011" when "00000111"; -- OR
-                            sp_en <= '1';  -- sp = sp + 4
-                            mem_b_addr_src <= "01";
+                                    PE <= poppc;
+                                when  "00000101"|"00000110"|"00000111" =>  -- ADD, AND, OR: Empilha a soma/and/or do topo com o segundo elemento da pilha.
+                                    mem_a_addr_src <= '0';
+                                    alu_a_src <= "01";
+                                    alu_b_src <= "00";
+                                    alu_shfimm_src <= '1'; -- constante 4
+                                    with instruction select alu_op <=
+                                        "001" when "00000101"; -- ADD
+                                        "010" when "00000110"; -- AND
+                                        "011" when "00000111"; -- OR
+                                    sp_en <= '1';  -- sp = sp + 4
+                                    mem_b_addr_src <= "01";
 
-                            wait_men(false);
+                                    wait_men(false);
 
-                            PE <= operation;
+                                    PE <= operation_2;
 
-                        when  "00001000" => -- LOAD: Substitui o topo da pilha pelo conteúdo endereçado pelo topo.
-                            mem_a_addr_src <= '0';
-                
-                            wait_men(false);
+                                when  "00001000" => -- LOAD: Substitui o topo da pilha pelo conteúdo endereçado pelo topo.
+                                    mem_a_addr_src <= '0';
+                        
+                                    wait_men(false);
 
-                            PE <= load;
+                                    PE <= load;
 
-                        when  "00001001" => -- NOT: Empilha o NOT do topo da pilha.
-                            ;
-                        when  "00001010" => ;
-                        when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
-                            PE <= fetch;
-                        when  "00001100" => ;
-                        when  "00001101" => ;
-                    end case;
-
-                    if instruction(4) = '1' then
-                        ;
-                    elsif instruction(5) = '1' then
-                        ;
-                    elsif instruction(6 downto 5) = "10" then
-                        ;
-                    elsif instruction(6 downto 5) = "11" then
-                        ;
-                    end if;
-                else
+                                when  "00001001"|"0000_1010" => -- NOT/FLIP: Empilha o NOT/reverso do topo da pilha.
+                                    ;
+                                when  "00001010" => ;
+                                when  "00001011" => -- NOP: Não faz nada por um ciclo de clock
+                                    PE <= fetch;
+                                when  "00001100" => ;
+                                when  "00001101" => ;
+                            end case;
+                        else -- 0001_nnnn
+                                ;
+                    else -- 0_nnnnnnn
+                        case instruction(6 downto 5) is
+                            when "01" =>
+                                ;
+                            when "10" =>
+                                ;
+                            when "11" =>
+                                ;
+                else -- 1_nnnnnnn
                     ;
 
             when break =>
@@ -166,13 +168,13 @@ begin
                 
                 PE <= fetch;
             
-            when operation =>
+            when operation_2 =>
                 sp_en <= '0';
                 alu_a_src <= "10";
                 alu_b_src <= "01";
                 alu_mem <= '1';
                 mem_b_addr_src <= "00";
-                mem_b_wrd_src <= "00
+                mem_b_wrd_src <= "00";
 
                 wait_mem(true);
                 
@@ -186,6 +188,9 @@ begin
                 wait_mem(true);
 
                 PE <= fetch;
+
+            when operation_1 =>
+                ;
             
         end case;
 
