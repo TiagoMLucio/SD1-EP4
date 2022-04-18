@@ -72,12 +72,24 @@ begin
 
     
     begin
+        pc_en <= '0';
+        ir_en <= '0';
+        sp_en <= '0';
+        pc_src <= '0';
+        mem_a_addr_src <= '0';
+        mem_b_mem_src <= '0';
+        alu_shfimm_src <= '0';
+        alu_mem_src <= '0';
+        mem_we <= '0';
+        mem_enable <= '0';
+        mem_b_addr_src <= "00";
+        mem_b_wrd_src <= "00";
+        alu_a_src <= "00";
+        alu_b_src <= "00";
+        alu_op <= "000";
+        halted <= '0';
         case (EA) is
             when fetch =>
-                pc_en <= '0';
-                sp_en <= '0';
-                ir_en <= '0';
-
                 mem_a_addr_src <= '1';
 
                 wait_mem(false);
@@ -94,9 +106,6 @@ begin
                 PE <= decode;
 
             when decode =>
-                pc_en <= '0';
-                sp_en <= '0';
-                ir_en <= '0';
                 if (instruction(7) = '0') then
                     im_count <= '0';
                     if (instruction(6 downto 5) = "00") then
@@ -250,7 +259,7 @@ begin
 
                                 PE <= storesp;
                             
-                                when others =>
+                            when others =>
                         end case;
                     end if;
                 else -- 1_nnnnnnn
@@ -268,6 +277,7 @@ begin
 
                         wait_mem(true);
 
+                        PE <= fetch;
                     else -- IM*
                         mem_a_addr_src <= '0';
                         alu_mem_src <= '0'; -- memA_rdd«7 | IR[6:0]
@@ -277,16 +287,16 @@ begin
                         mem_b_addr_src <= "00";
                         
                         wait_mem(true);
+
+                        PE <= fetch;
                     end if;
                 end if;
-
-
 
             when break =>
                 halted <= '1';
 
             when pushsp =>
-                sp_en <= '0';
+                -- sp_en <= '0';
 
                 alu_a_src <= "01";
                 alu_b_src <= "00";
@@ -300,7 +310,7 @@ begin
                 PE <= fetch;
             
             when poppc =>
-                pc_en <= '0';
+                -- pc_en <= '0';
                 alu_a_src <= "01";
                 alu_b_src <= "00";
                 alu_shfimm_src <= '1'; -- constante 4
@@ -310,7 +320,7 @@ begin
                 PE <= fetch;
             
             when operation_2 =>
-                sp_en <= '0';
+                -- sp_en <= '0';
                 alu_a_src <= "10";
                 alu_b_src <= "01";
                 alu_mem_src <= '1';
