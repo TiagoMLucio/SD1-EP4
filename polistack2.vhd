@@ -27,43 +27,6 @@ end entity;
 
 architecture allinone of polistack is
 
-    component data_flow is 
-        generic (
-            addr_s : natural := 16; -- address size in bits
-            word_s : natural := 32  -- word size in bits
-        );
-        port (
-            clock, reset : in bit;
-            -- Memory Interface
-            memA_addr, memB_addr : out bit_vector(addr_s-1 downto 0);
-                    memB_wrd  : out bit_vector(word_s-1 downto 0);
-            memA_rdd, memB_rdd   : in bit_vector(word_s-1 downto 0);
-            -- Control Unit Interface
-            pc_en, ir_en, sp_en             : in bit;
-            pc_src, mem_a_addr_src,
-            mem_b_mem_src                   : in bit;
-            mem_b_addr_src, mem_b_wrd_src,
-            alu_a_src, alu_b_src            : in bit_vector(1 downto 0);
-            alu_shfimm_src, alu_mem_src     : in bit;
-            alu_op                          : in bit_vector(2 downto 0);
-            instruction                     : out bit_vector(7 downto 0)
-        );
-    end component;
-
-    component control_unit is
-        port (
-            clock, reset : in bit;
-            pc_en, ir_en, sp_en,
-            pc_src, mem_a_addr_src, mem_b_mem_src, alu_shfimm_src, alu_mem_src,
-            mem_we, mem_enable : out bit;
-            mem_b_addr_src, mem_b_wrd_src, alu_a_src, alu_b_src : out bit_vector (1 downto 0);
-            alu_op : out bit_vector (2 downto 0);
-            mem_busy : in bit;
-            instruction : in bit_vector (7 downto 0);
-            halted : out bit
-        );
-    end component;
-
     signal pc_en, ir_en, sp_en                                                  : bit;
     signal pc_src, mem_a_addr_src, mem_b_mem_src, alu_shfimm_src, alu_mem_src   : bit;
     signal mem_b_addr_src, mem_b_wrd_src, alu_a_src, alu_b_src                  : bit_vector(1 downto 0);
@@ -72,24 +35,24 @@ architecture allinone of polistack is
 
 begin
 
-    dfm : data_flow generic map (addr_s, word_s)
-                    port map (clock, reset, 
-                            memA_addr, memB_addr, memB_wrd, memA_rdd, memB_rdd, 
-                            pc_en, ir_en, sp_en, pc_src,
-                            mem_a_addr_src, mem_b_mem_src, mem_b_addr_src, mem_b_wrd_src, 
-                            alu_a_src, alu_b_src, alu_shfimm_src, alu_mem_src, alu_op, 
-                            instruction);
-    
-    ucm : control_unit port map (clock, reset,
-                                pc_en, ir_en, sp_en, pc_src,
-                                mem_a_addr_src, mem_b_mem_src, 
-                                alu_shfimm_src, alu_mem_src, 
-                                mem_we, mem_enable,
-                                mem_b_addr_src, mem_b_wrd_src, 
-                                alu_a_src, alu_b_src, alu_op,
-                                busy,
-                                instruction, 
-                                halted);
+    procD1: process(clock, reset, pc_en)
+    begin 
+        if (reset = '1') then pc <= bit_vector(to_unsigned(0, word_s));     -- assíncrono
+        elsif (pc_en = '1' and rising_edge(clock)) then pc <= d_pc;                      -- borda de subida do clock
+        end if ;
+    end process procD1;
+    procD2: process(clock, reset, sp_en)
+    begin 
+        if (reset = '1') then sp <= bit_vector(to_unsigned(131064, word_s));     -- assíncrono
+        elsif (sp_en = '1' and rising_edge(clock)) then sp <= alu_o;                      -- borda de subida do clock
+        end if ;
+    end process procD2;    
+    procD3: process(clock, reset, load)
+    begin 
+        if (reset = '1') then ir <= bit_vector(to_unsigned(0, 8));     -- assíncrono
+        elsif (ir_en = '1' and rising_edge(clock)) then ir <= memA_rdd(7 downto 0);                      -- borda de subida do clock
+        end if ;
+    end process procD3;    
 
 end architecture; -- arch
 
@@ -435,7 +398,6 @@ end entity;
 architecture arch of control_unit is
     type estado_t is (
                     fetch, 
-                    wait_fetch,
                     decode, 
                     -- Execute (
                     break, 
@@ -501,6 +463,11 @@ begin
         halted <= '0';
         case (EA) is
             when fetch =>
+                mem_a_addr_src <= '1';
+
+                wait_mem(false);
+
+                ir_en <= '1';
 
                 pc_en <= '1';
                 pc_src <= '0';
@@ -508,16 +475,6 @@ begin
                 alu_b_src <= "00";
                 alu_shfimm_src <= '0'; -- constante 1
                 alu_op <= "001"; -- adição
-
-                mem_a_addr_src <= '1';
-
-                PE <= wait_fetch;
-
-            when wait_fetch =>
-
-                wait_mem(false);
-
-                ir_en <= '1';
 
                 PE <= decode;
 
