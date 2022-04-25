@@ -82,7 +82,6 @@ begin
 
 
     aux_ir : for i in word_s-1 downto 0 generate
-
         ir_3i : if (i <= 3) generate
             ir3(i) <= ir(i);
         end generate;
@@ -103,7 +102,7 @@ begin
         end generate;
         ir_6e : if (i > 6) generate
             ir6(i) <= '0';
-            ir6_se(i) <= ir(7);
+            ir6_se(i) <= ir(6);
         end generate;
         
     end generate;
@@ -115,7 +114,10 @@ begin
         ir3_2 : if (i > 1 and i <= 5) generate
             ir3_f(i) <= ir3(i-2);
         end generate;
-        ir3_3 : if (i > 5) generate
+        ir3_3 : if (i = 6) generate
+            ir3_f(i) <= not ir(4);
+        end generate;
+        ir3_4 : if (i > 6) generate
             ir3_f(i) <= '0';
         end generate;
     end generate;
